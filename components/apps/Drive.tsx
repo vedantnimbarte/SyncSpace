@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Folder,
   FileText,
@@ -19,14 +19,34 @@ import {
   Download,
   Share2,
   Presentation,
+  X,
+  UploadCloud,
+  File,
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+  User,
 } from "lucide-react";
 import { AppView, FileItem } from "../../types";
 
+interface UploadingFile {
+  id: string;
+  name: string;
+  size: string;
+  progress: number;
+  status: "uploading" | "completed" | "error";
+  type: string;
+}
+
 const Drive: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<UploadingFile[]>([]);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   // Extended mock data to demonstrate Masonry layout
-  const files: FileItem[] = [
+  const [files, setFiles] = useState<FileItem[]>([
     {
       id: "1",
       title: "Marketing Assets",
@@ -124,7 +144,72 @@ const Drive: React.FC = () => {
       owner: "Exec",
       size: "15 MB",
     },
-  ];
+  ]);
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
+      ) {
+        setIsFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Simulate file upload progress
+  useEffect(() => {
+    if (uploadQueue.some((f) => f.status === "uploading")) {
+      const interval = setInterval(() => {
+        setUploadQueue((prev) =>
+          prev.map((file) => {
+            if (file.status === "uploading") {
+              const newProgress = Math.min(
+                file.progress + Math.random() * 10,
+                100,
+              );
+              return {
+                ...file,
+                progress: newProgress,
+                status: newProgress >= 100 ? "completed" : "uploading",
+              };
+            }
+            return file;
+          }),
+        );
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [uploadQueue]);
+
+  const handleFileUpload = () => {
+    // Simulate adding files
+    const newFiles: UploadingFile[] = [
+      {
+        id: Date.now().toString(),
+        name: "Project_Specs_v2.pdf",
+        size: "4.2 MB",
+        progress: 0,
+        status: "uploading",
+        type: "pdf",
+      },
+      {
+        id: (Date.now() + 1).toString(),
+        name: "Design_System_Assets.zip",
+        size: "156 MB",
+        progress: 0,
+        status: "uploading",
+        type: "zip",
+      },
+    ];
+    setUploadQueue([...uploadQueue, ...newFiles]);
+    setIsUploadModalOpen(false);
+  };
 
   const getIcon = (item: FileItem, size: number = 24) => {
     if (item.folder)
@@ -159,7 +244,7 @@ const Drive: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-transparent">
+    <div className="h-full flex flex-col bg-transparent relative">
       {/* Drive Toolbar - Glass Effect */}
       <div className="px-8 py-5 flex items-center justify-between sticky top-0 z-20 bg-white/60 backdrop-blur-xl border-b border-white/20">
         <div className="flex items-center gap-2 text-sm text-slate-500">
@@ -187,11 +272,103 @@ const Drive: React.FC = () => {
               <ListIcon size={18} />
             </button>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white/50 hover:bg-white border border-white/40 rounded-xl text-sm font-medium text-slate-600 transition-all shadow-sm hover:shadow-md">
-            <Filter size={16} />
-            <span>Filter</span>
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-brand-500/20">
+
+          <div className="relative" ref={filterRef}>
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`flex items-center gap-2 px-4 py-2 bg-white/50 hover:bg-white border border-white/40 rounded-xl text-sm font-medium text-slate-600 transition-all shadow-sm hover:shadow-md ${isFilterOpen ? "bg-white ring-2 ring-brand-100" : ""}`}
+            >
+              <Filter size={16} />
+              <span>Filter</span>
+            </button>
+
+            {isFilterOpen && (
+              <div className="absolute top-full right-0 mt-2 w-72 bg-white/90 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/50 p-4 z-50 animate-in fade-in zoom-in-95">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      Type
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="flex items-center gap-2 text-sm text-slate-700 hover:bg-slate-50 p-1.5 rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="rounded text-brand-600 focus:ring-brand-500"
+                        />{" "}
+                        Documents
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-slate-700 hover:bg-slate-50 p-1.5 rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="rounded text-brand-600 focus:ring-brand-500"
+                        />{" "}
+                        Spreadsheets
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-slate-700 hover:bg-slate-50 p-1.5 rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="rounded text-brand-600 focus:ring-brand-500"
+                        />{" "}
+                        Presentations
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-slate-700 hover:bg-slate-50 p-1.5 rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="rounded text-brand-600 focus:ring-brand-500"
+                        />{" "}
+                        Folders
+                      </label>
+                    </div>
+                  </div>
+                  <div className="h-px bg-slate-100"></div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      Modified
+                    </h4>
+                    <select className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500/20">
+                      <option>Any time</option>
+                      <option>Today</option>
+                      <option>Last 7 days</option>
+                      <option>Last 30 days</option>
+                    </select>
+                  </div>
+                  <div className="h-px bg-slate-100"></div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                      Owner
+                    </h4>
+                    <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
+                      <User size={14} className="text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search people..."
+                        className="bg-transparent text-sm w-full outline-none placeholder-slate-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button
+                      onClick={() => setIsFilterOpen(false)}
+                      className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => setIsFilterOpen(false)}
+                      className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-bold hover:bg-brand-700"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-brand-500/20"
+          >
             <Cloud size={16} />
             <span>Upload</span>
           </button>
@@ -415,6 +592,121 @@ const Drive: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Upload Modal */}
+      {isUploadModalOpen && (
+        <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">Upload Files</h3>
+              <button
+                onClick={() => setIsUploadModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-8">
+              <div
+                className="border-2 border-dashed border-brand-200 bg-brand-50/50 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-brand-50 hover:border-brand-300 transition-all group"
+                onClick={handleFileUpload}
+              >
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                  <UploadCloud size={32} className="text-brand-500" />
+                </div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-1">
+                  Click to upload
+                </h4>
+                <p className="text-sm text-gray-500 mb-4">
+                  or drag and drop files here
+                </p>
+                <p className="text-xs text-gray-400">
+                  Supported formats: PDF, DOCX, XLSX, JPG, PNG
+                </p>
+              </div>
+            </div>
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setIsUploadModalOpen(false)}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFileUpload}
+                className="px-4 py-2 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 shadow-sm"
+              >
+                Select Files
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Progress Queue */}
+      {uploadQueue.length > 0 && (
+        <div className="absolute bottom-6 right-6 w-96 bg-white/90 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden z-40 animate-slide-up">
+          <div className="bg-gray-900 text-white px-4 py-3 flex justify-between items-center">
+            <span className="text-sm font-semibold flex items-center gap-2">
+              <Cloud size={14} /> Uploads (
+              {uploadQueue.filter((f) => f.status === "completed").length}/
+              {uploadQueue.length})
+            </span>
+            <button
+              onClick={() => setUploadQueue([])}
+              className="p-1 hover:bg-white/20 rounded-full"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div className="max-h-60 overflow-y-auto">
+            {uploadQueue.map((file) => (
+              <div
+                key={file.id}
+                className="p-3 border-b border-gray-100 last:border-0 hover:bg-white/50"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="p-2 bg-gray-100 rounded-lg text-gray-500">
+                      <File size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <p
+                        className="text-sm font-medium text-gray-800 truncate"
+                        title={file.name}
+                      >
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-gray-400">{file.size}</p>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {file.status === "completed" && (
+                      <CheckCircle2 size={16} className="text-green-500" />
+                    )}
+                    {file.status === "error" && (
+                      <AlertCircle size={16} className="text-red-500" />
+                    )}
+                    {file.status === "uploading" && (
+                      <span className="text-xs font-bold text-brand-600">
+                        {Math.round(file.progress)}%
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {file.status === "uploading" && (
+                  <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-brand-500 rounded-full transition-all duration-300"
+                      style={{ width: `${file.progress}%` }}
+                    ></div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
