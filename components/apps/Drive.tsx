@@ -26,6 +26,11 @@ import {
   AlertCircle,
   Calendar,
   User,
+  Copy,
+  Trash2,
+  Edit2,
+  Link,
+  Check,
 } from "lucide-react";
 import { AppView, FileItem } from "../../types";
 
@@ -43,9 +48,18 @@ const Drive: React.FC = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [uploadQueue, setUploadQueue] = useState<UploadingFile[]>([]);
-  const filterRef = useRef<HTMLDivElement>(null);
 
-  // Extended mock data to demonstrate Masonry layout
+  // New State for Share/More features
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [activeFile, setActiveFile] = useState<FileItem | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const filterRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Extended mock data
   const [files, setFiles] = useState<FileItem[]>([
     {
       id: "1",
@@ -146,7 +160,7 @@ const Drive: React.FC = () => {
     },
   ]);
 
-  // Close filter dropdown when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -154,6 +168,12 @@ const Drive: React.FC = () => {
         !filterRef.current.contains(event.target as Node)
       ) {
         setIsFilterOpen(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        // Only close if we didn't click on a trigger button
+        if (!(event.target as HTMLElement).closest("[data-menu-trigger]")) {
+          setMenuOpenId(null);
+        }
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -188,7 +208,6 @@ const Drive: React.FC = () => {
   }, [uploadQueue]);
 
   const handleFileUpload = () => {
-    // Simulate adding files
     const newFiles: UploadingFile[] = [
       {
         id: Date.now().toString(),
@@ -209,6 +228,30 @@ const Drive: React.FC = () => {
     ];
     setUploadQueue([...uploadQueue, ...newFiles]);
     setIsUploadModalOpen(false);
+  };
+
+  const handleShare = (e: React.MouseEvent, file: FileItem) => {
+    e.stopPropagation();
+    setActiveFile(file);
+    setShareModalOpen(true);
+    setMenuOpenId(null);
+  };
+
+  const handleDownload = (e: React.MouseEvent, file: FileItem) => {
+    e.stopPropagation();
+    setDownloadingFile(file.title);
+    setMenuOpenId(null);
+    setTimeout(() => setDownloadingFile(null), 3000);
+  };
+
+  const toggleMenu = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setMenuOpenId(menuOpenId === id ? null : id);
+  };
+
+  const copyLink = () => {
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   const getIcon = (item: FileItem, size: number = 24) => {
@@ -439,7 +482,7 @@ const Drive: React.FC = () => {
               {files.map((file, index) => (
                 <div
                   key={file.id}
-                  className="break-inside-avoid group relative bg-white/60 backdrop-blur-md rounded-3xl p-1 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.15)] hover:bg-white/80 border border-white/50 hover:border-white/80 transition-all duration-500 cursor-pointer overflow-hidden animate-slide-up hover:-translate-y-2"
+                  className="break-inside-avoid group relative bg-white/60 backdrop-blur-md rounded-3xl p-1 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.15)] hover:bg-white/80 border border-white/50 hover:border-white/80 transition-all duration-500 cursor-pointer overflow-visible animate-slide-up hover:-translate-y-2"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   {/* Liquid Gloss Effect */}
@@ -507,16 +550,59 @@ const Drive: React.FC = () => {
                       </div>
 
                       {/* Hover Actions */}
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 duration-200">
-                        <button className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 shadow-sm">
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 duration-200 relative">
+                        <button
+                          onClick={(e) => handleShare(e, file)}
+                          className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 shadow-sm"
+                          title="Share"
+                        >
                           <Share2 size={12} />
                         </button>
-                        <button className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 shadow-sm">
+                        <button
+                          onClick={(e) => handleDownload(e, file)}
+                          className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 shadow-sm"
+                          title="Download"
+                        >
                           <Download size={12} />
                         </button>
-                        <button className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 shadow-sm">
+                        <button
+                          data-menu-trigger
+                          onClick={(e) => toggleMenu(e, file.id)}
+                          className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 shadow-sm"
+                        >
                           <MoreHorizontal size={12} />
                         </button>
+
+                        {/* Dropdown Menu */}
+                        {menuOpenId === file.id && (
+                          <div
+                            ref={menuRef}
+                            className="absolute right-0 bottom-full mb-2 w-48 bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/50 p-1.5 z-50 animate-in fade-in zoom-in-95 origin-bottom-right"
+                          >
+                            <button
+                              onClick={(e) => handleShare(e, file)}
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-2"
+                            >
+                              <Share2 size={14} /> Share
+                            </button>
+                            <button
+                              onClick={(e) => handleDownload(e, file)}
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-2"
+                            >
+                              <Download size={14} /> Download
+                            </button>
+                            <button className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-2">
+                              <Edit2 size={14} /> Rename
+                            </button>
+                            <button className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-2">
+                              <Star size={14} /> Add to Favorites
+                            </button>
+                            <div className="h-px bg-slate-100 my-1"></div>
+                            <button className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 rounded-lg text-xs font-medium flex items-center gap-2">
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -525,7 +611,7 @@ const Drive: React.FC = () => {
             </div>
           ) : (
             // List View
-            <div className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden animate-slide-up">
+            <div className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-sm border border-white/50 overflow-hidden animate-slide-up pb-24">
               <table className="w-full">
                 <thead className="bg-white/40 border-b border-white/40">
                   <tr>
@@ -579,10 +665,42 @@ const Drive: React.FC = () => {
                       <td className="py-4 px-6 text-sm text-slate-500">
                         {file.size}
                       </td>
-                      <td className="py-4 px-6">
-                        <button className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 transition-all shadow-sm">
+                      <td className="py-4 px-6 relative">
+                        <button
+                          data-menu-trigger
+                          onClick={(e) => toggleMenu(e, file.id)}
+                          className="opacity-0 group-hover:opacity-100 p-2 hover:bg-white rounded-lg text-slate-400 hover:text-slate-600 transition-all shadow-sm"
+                        >
                           <MoreHorizontal size={16} />
                         </button>
+
+                        {/* Dropdown Menu (List View) */}
+                        {menuOpenId === file.id && (
+                          <div
+                            ref={menuRef}
+                            className="absolute right-8 top-8 w-48 bg-white/90 backdrop-blur-xl rounded-xl shadow-xl border border-white/50 p-1.5 z-50 animate-in fade-in zoom-in-95 origin-top-right"
+                          >
+                            <button
+                              onClick={(e) => handleShare(e, file)}
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-2"
+                            >
+                              <Share2 size={14} /> Share
+                            </button>
+                            <button
+                              onClick={(e) => handleDownload(e, file)}
+                              className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-2"
+                            >
+                              <Download size={14} /> Download
+                            </button>
+                            <button className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-2">
+                              <Edit2 size={14} /> Rename
+                            </button>
+                            <div className="h-px bg-slate-100 my-1"></div>
+                            <button className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 rounded-lg text-xs font-medium flex items-center gap-2">
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -592,6 +710,104 @@ const Drive: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Share Modal */}
+      {shareModalOpen && activeFile && (
+        <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-lg font-bold text-gray-900">
+                  Share "{activeFile.title}"
+                </h3>
+                <button
+                  onClick={() => setShareModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="text-sm text-gray-500">
+                Invite people to view or edit this file.
+              </p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <User
+                    size={16}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Add people, groups, or emails..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300"
+                  />
+                </div>
+                <select className="bg-gray-50 border border-gray-200 rounded-xl px-3 text-sm font-medium text-gray-700 outline-none focus:border-brand-300">
+                  <option>Can edit</option>
+                  <option>Can view</option>
+                  <option>Can comment</option>
+                </select>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  People with access
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-xs">
+                        AT
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">
+                          Alexandra T. (You)
+                        </p>
+                        <p className="text-xs text-gray-500">alex.t@acme.com</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400 italic">Owner</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src="https://i.pravatar.cc/150?u=sarah"
+                        className="w-8 h-8 rounded-full"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">
+                          Sarah Miller
+                        </p>
+                        <p className="text-xs text-gray-500">sarah@acme.com</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-500">Editor</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+              <button
+                onClick={copyLink}
+                className="flex items-center gap-2 px-3 py-2 hover:bg-white rounded-xl text-sm font-semibold text-brand-600 transition-colors"
+              >
+                {copiedLink ? <Check size={16} /> : <Link size={16} />}
+                {copiedLink ? "Copied!" : "Copy Link"}
+              </button>
+              <button
+                onClick={() => setShareModalOpen(false)}
+                className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-bold hover:bg-brand-700 shadow-sm transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Upload Modal */}
       {isUploadModalOpen && (
@@ -705,6 +921,16 @@ const Drive: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Download Toast Simulation */}
+      {downloadingFile && (
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-xl shadow-2xl z-50 animate-in fade-in slide-in-from-bottom-4 flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          <span className="text-sm font-medium">
+            Downloading "{downloadingFile}"...
+          </span>
         </div>
       )}
     </div>
