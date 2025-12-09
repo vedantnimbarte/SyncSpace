@@ -27,7 +27,8 @@ import {
   CreditCard,
   BadgeCheck,
   Sparkles,
-  User
+  User,
+  Mail
 } from 'lucide-react';
 import { AppView, FileSystemItem, SidebarProps } from '../types';
 
@@ -119,6 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isCollapse
       case AppView.DRIVE: return <HardDrive size={16} className="text-gray-500" />;
       case AppView.CHAT: return <MessageCircle size={16} className="text-indigo-500" />;
       case AppView.CALLS: return <Video size={16} className="text-rose-500" />;
+      case AppView.EMAIL: return <Mail size={16} className="text-emerald-500" />;
       default: return <FileText size={16} className="text-gray-400" />;
     }
   };
@@ -249,6 +251,18 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isCollapse
               {!isCollapsed && <span>Drive</span>}
             </button>
             <button
+              onClick={() => onChangeView(AppView.EMAIL)}
+              title={isCollapsed ? "Email" : ""}
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-xl text-sm transition-all group ${
+                currentView === AppView.EMAIL
+                  ? 'bg-white shadow-sm text-emerald-600 font-medium'
+                  : 'text-gray-600 hover:bg-white/60 hover:text-gray-900'
+              }`}
+            >
+              <Mail size={20} className={`${currentView === AppView.EMAIL ? 'text-emerald-500' : 'text-gray-400 group-hover:text-emerald-500'} transition-colors`} />
+              {!isCollapsed && <span>Email</span>}
+            </button>
+            <button
               onClick={() => onChangeView(AppView.CHAT)}
               title={isCollapsed ? "Chat" : ""}
               className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-xl text-sm transition-all group ${
@@ -337,7 +351,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, isCollapse
                       <Sparkles size={16} className="text-yellow-200" />
                       <span className="text-xs font-bold uppercase tracking-wider">SyncSpace Pro</span>
                   </div>
-                  <p className="text-xs text-white/90 mb-3 leading-relaxed">You're on the Pro plan. 250 AI credits remaining this month.</p>
+                  <p className="text-xs text-white/90 mb-3 leading-relaxed">You're on the Pro plan.</p>
                   <button className="w-full py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold transition-colors border border-white/20">
                       Manage Subscription
                   </button>

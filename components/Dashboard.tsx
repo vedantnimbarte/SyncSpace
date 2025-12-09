@@ -10,14 +10,13 @@ import {
   Search, 
   Sparkles,
   Folder,
-  MoreHorizontal,
   ArrowRight,
   KanbanSquare,
   ArrowUpRight,
   Clock,
   User,
-  Star,
-  Video
+  Video,
+  Mail
 } from 'lucide-react';
 import { AppView, FileItem } from '../types';
 
@@ -26,7 +25,7 @@ interface DashboardProps {
   onAskAI: (message: string) => void;
 }
 
-type TabType = 'files' | 'templates' | 'ai';
+type TabType = 'files' | 'templates';
 
 const Dashboard: React.FC<DashboardProps> = ({ onOpenApp, onAskAI }) => {
   const [activeTab, setActiveTab] = useState<TabType>('files');
@@ -34,13 +33,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenApp, onAskAI }) => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      if (activeTab === 'ai') {
-        onAskAI(inputValue);
-        setInputValue('');
-      } else {
         // Handle search (mock)
         console.log(`Searching for ${inputValue} in ${activeTab}`);
-      }
     }
   };
 
@@ -51,6 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenApp, onAskAI }) => {
     { id: AppView.PRESENTATIONS, label: 'Slides', icon: Presentation, color: 'text-orange-500', bg: 'bg-orange-50', border: 'border-orange-100' },
     { id: AppView.PROJECTS, label: 'Projects', icon: KanbanSquare, color: 'text-pink-500', bg: 'bg-pink-50', border: 'border-pink-100' },
     { id: AppView.WORKFLOWS, label: 'Workflows', icon: Workflow, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100' },
+    { id: AppView.EMAIL, label: 'Email', icon: Mail, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100' },
     { id: AppView.CALLS, label: 'Calls', icon: Video, color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-100' },
     { id: AppView.DRIVE, label: 'Drive', icon: HardDrive, color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-gray-200' },
   ];
@@ -186,24 +181,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenApp, onAskAI }) => {
                 >
                     Templates
                 </button>
-                <button 
-                    onClick={() => setActiveTab('ai')}
-                    className={`flex items-center gap-2 text-sm font-bold transition-all pb-1 border-b-2 ${activeTab === 'ai' ? 'text-brand-600 border-brand-600' : 'text-slate-400 border-transparent hover:text-brand-600'}`}
-                >
-                    <Sparkles size={16} />
-                    AI Assistant
-                </button>
             </div>
 
             {/* Input */}
-            <div className={`relative group transition-all duration-700 ease-out ${activeTab === 'ai' ? 'scale-105' : ''}`}>
+            <div className={`relative group transition-all duration-700 ease-out`}>
                 {/* Glow Effect */}
-                <div className={`absolute -inset-1 bg-gradient-to-r rounded-[28px] blur-xl opacity-40 transition-opacity duration-500 ${activeTab === 'ai' ? 'from-brand-500 via-purple-500 to-pink-500 opacity-70' : 'from-slate-200 to-slate-300'}`}></div>
+                <div className={`absolute -inset-1 bg-gradient-to-r rounded-[28px] blur-xl opacity-40 transition-opacity duration-500 from-slate-200 to-slate-300`}></div>
                 
                 {/* Glass Container */}
                 <div className="relative bg-white/70 backdrop-blur-2xl rounded-[24px] shadow-2xl flex items-center overflow-hidden h-20 transition-all border border-white/60 focus-within:ring-4 focus-within:ring-brand-500/10 focus-within:bg-white/90">
                     <div className="pl-8 text-slate-400">
-                        {activeTab === 'ai' ? <Sparkles size={28} className="text-brand-500 animate-pulse" /> : <Search size={28} />}
+                        <Search size={28} />
                     </div>
                     <input 
                         type="text" 
@@ -211,23 +199,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onOpenApp, onAskAI }) => {
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder={
-                            activeTab === 'ai' 
-                            ? "Ask AI to generate, analyze, or create..." 
-                            : activeTab === 'templates' 
+                           activeTab === 'templates' 
                                 ? "Search templates..." 
                                 : "Search your files..."
                         }
                         className="w-full h-full px-6 outline-none text-xl text-slate-800 placeholder-slate-400 bg-transparent font-medium"
                         autoFocus
                     />
-                    {activeTab === 'ai' && inputValue && (
-                        <button 
-                            onClick={() => { onAskAI(inputValue); setInputValue(''); }}
-                            className="mr-4 p-3.5 bg-slate-900 text-white rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-2xl"
-                        >
-                            <ArrowRight size={24} />
-                        </button>
-                    )}
                 </div>
             </div>
 

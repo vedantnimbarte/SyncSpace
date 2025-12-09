@@ -11,6 +11,7 @@ export enum AppView {
   DRIVE = 'DRIVE',
   CHAT = 'CHAT',
   CALLS = 'CALLS',
+  EMAIL = 'EMAIL',
   VIEW_ALL = 'VIEW_ALL',
   SETTINGS = 'SETTINGS',
 }

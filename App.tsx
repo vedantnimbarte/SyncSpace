@@ -11,6 +11,7 @@ import Kanban from './components/apps/Kanban';
 import Drive from './components/apps/Drive';
 import Chat from './components/apps/Chat';
 import Calls from './components/apps/Calls';
+import Email from './components/apps/Email';
 import ViewAll from './components/ViewAll';
 import Settings from './components/Settings';
 import AIChat from './components/AIChat';
@@ -40,6 +41,7 @@ const App: React.FC = () => {
       case AppView.DRIVE: return <Drive />;
       case AppView.CHAT: return <Chat />;
       case AppView.CALLS: return <Calls />;
+      case AppView.EMAIL: return <Email />;
       case AppView.VIEW_ALL: return <ViewAll onOpenApp={setCurrentView} />;
       case AppView.SETTINGS: return <Settings />;
       default: return <Dashboard onOpenApp={setCurrentView} onAskAI={handleAskAI} />;
@@ -93,12 +95,6 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
-             {/* AI Credits */}
-             <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-50/50 to-orange-50/50 rounded-full border border-orange-100/50 backdrop-blur-sm">
-                <Zap size={12} className="fill-orange-400 text-orange-400" />
-                <span className="text-xs font-bold text-orange-700">250 credits</span>
-             </div>
-
              <button className="p-2 text-gray-400 hover:bg-white/60 rounded-full relative transition-colors">
                 <Bell size={20} />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
